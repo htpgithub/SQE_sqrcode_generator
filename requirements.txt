@@ -1,0 +1,6 @@
+qrcode
+Pillow
+pyzbar
+# opencv-python
+numpy
+# cairosvg
