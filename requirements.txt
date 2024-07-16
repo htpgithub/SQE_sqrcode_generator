@@ -1,6 +1,4 @@
-qrcode
-Pillow
-pyzbar
-opencv-python
-numpy
-# cairosvg
+numpy==1.26.4
+matplotlib==3.9.1
+opencv-python==4.10.0.84
+qrcode==7.4.2
