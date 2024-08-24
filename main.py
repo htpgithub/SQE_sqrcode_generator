@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from reedsolo import RSCodec
 import json
 
-class HexagonDotPattern:
+class SQEDotPatternCode:
     def __init__(self, data, hexagon_radius=500, dot_diameter=25, dot_spacing=25):
         self.data = data
         self.hexagon_radius = hexagon_radius
@@ -161,7 +161,6 @@ class HexagonDotPattern:
         self.draw_square()
         self.place_dots()
 
-        # Save black dot coordinates to a JSON file
         coords_filename = "black_dot_coords.json"
         with open(coords_filename, "w") as coords_file:
             json.dump(self.black_dot_coords, coords_file, indent=4)
@@ -176,7 +175,7 @@ class HexagonDotPattern:
 
 # Main entry point for generating the pattern
 if __name__ == "__main__":
-    processor = HexagonDotPattern(
+    processor = SQEDotPatternCode(
         data="Welcome To SQE, The Quantum Secure Blockchain Platform"
     )
     processor.process_and_visualize()
