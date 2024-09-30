@@ -175,10 +175,10 @@ class SQEDotPatternCode:
                     self.processed_image[x, y] = 0  # Place the QR code pixel on the image
 
     def find_space(self, cv_size):
-        dot_spacing = 10
+        dot_spacing = 9
         center_x = self.image_size // 2
 
-        for space in range(dot_spacing, dot_spacing * 3):
+        for space in range(dot_spacing, dot_spacing * 4):
             count = 0
             for y in range(0, cv_size[1], space):
                 for x in range(0, cv_size[0], space):
@@ -189,14 +189,15 @@ class SQEDotPatternCode:
                                 if count > self.dot_number:
                                     dot_spacing += 1
 
-        print(f"dot_spacing is: {dot_spacing}")
-        return dot_spacing
+        if dot_spacing % 2 != 0:
+            return dot_spacing
+        return dot_spacing - 1
 
     def create_dot(self):
-
         cv_size = (1000, 1000)
         center_x = self.image_size // 2
         dot_spacing = self.find_space(cv_size)
+        print(f"dot_spacing is: {dot_spacing}")
 
         # Loop through rows and columns to create a grid of circles
         for y in range(0, cv_size[1], dot_spacing):
@@ -218,12 +219,10 @@ class SQEDotPatternCode:
         return (dy <= a) and (a * dx + 0.25 * dy <= 0.5 * a)
 
     def show_dots(self):
+        print("show_dots", len(self._dots))
         for i, dot in enumerate(self._dots):
             dot.show()
             self.count += 1
-
-            if self.count % 2 != 0:
-                pass
 
             # mirrored_x, mirrored_y = mirror_coordinates(x, y, center_x, center_y)
             # mirror_dot = DotPlacer(mirrored_x, mirrored_y, self.processed_image, self.image_size,
@@ -246,5 +245,6 @@ class SQEDotPatternCode:
 
 # Main entry point for generating the pattern
 if __name__ == "__main__":
-    processor = SQEDotPatternCode(data="nceptosdiamcuraefelisaliquamsociosqumussociosqu")
+    processor = SQEDotPatternCode(
+        data="nceptosdiamcuraefeklklklklkli")
     processor.process_and_visualize()
