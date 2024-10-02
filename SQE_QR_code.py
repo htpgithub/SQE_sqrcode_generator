@@ -80,7 +80,7 @@ def inside_hexagon(x, y, image_size):
     center_x = image_size // 2
     center_y = (image_size + 50) // 2
     dy = abs(x - center_x) / image_size
-    dx = abs(y - center_y) / (image_size + 10)
+    dx = abs(y - center_y) / image_size
     a = 0.25 * math.sqrt(3.0)
 
     return (dy <= a) and (a * dx + 0.25 * dy <= 0.5 * a)
@@ -116,7 +116,7 @@ class DotPlacer:
         if self.inside_hexagon and not self.inside_QRCode:
             if self.vertical_dot:
                 if size_arr_index < 7: size_arr_index += 1
-                if not size_arr[size_arr_index] and size_arr_index <= 7:
+                if not size_arr[size_arr_index] and size_arr_index <= 7 and self.y < self.center:
                     self.visible = False
 
             if self.visible:
