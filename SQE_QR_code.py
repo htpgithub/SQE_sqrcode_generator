@@ -7,8 +7,11 @@ import matplotlib.pyplot as plt
 import json
 
 """Variables Start"""
-black_color = (0, 0, 252)
-red_color = (150, 0, 0)
+red_color = (0, 0, 252)
+black_color = (0, 0, 0)
+blue_color = (255, 0, 0)
+size_arr = []
+size_arr_index = -1
 """Variables End"""
 
 
@@ -72,21 +75,22 @@ def includes_vertical_dots(x, center_x):
     return center_x - 10 >= x or x >= center_x + 10
 
 
-def includes_vertical_doss_color(x, center_x, dots):
-    if center_x - 10 >= x or x >= center_x + 10:
-        dots.set_change_color(black_color)
-    else:
-        dots.set_change_color(red_color)
-        dots.set_vertical_dot(True)
+def inside_hexagon(x, y, image_size):
+    """Check if a point (x, y) is inside the hexagon."""
+    center_x = image_size // 2
+    center_y = image_size // 2
+    dy = abs(x - center_x) / image_size
+    dx = abs(y - center_y) / image_size
+    a = 0.25 * math.sqrt(3.0)
 
-    return True
+    return (dy <= a) and (a * dx + 0.25 * dy <= 0.5 * a)
 
 
 """Functions End"""
 
 
 class DotPlacer:
-    def __init__(self, x, y, processed_image, image_size, hexagon_radius):
+    def __init__(self, x, y, processed_image, hexagon_radius):
         self.x = x
         self.y = y
         self.inside_hexagon = False
@@ -95,23 +99,53 @@ class DotPlacer:
         self.color = black_color
         self.dot_diameter = 4.5  # Dot diameter is 90% of the dot-to-dot dimension
         self.processed_image = processed_image
-        self.image_size = image_size
         self.hexagon_radius = hexagon_radius
 
     def set_vertical_dot(self, value: bool):
         self.vertical_dot = value
 
-    def set_change_color(self, value: str):
+    def set_change_color(self, value: tuple):
         self.color = value
 
-    def show(self):
+    def show(self, square_side, image_size):
+        global size_arr_index
         dot_radius = int(self.dot_diameter)
-        cv2.circle(self.processed_image, (self.x, self.y), dot_radius, self.color, -1)  # Red filled circle
+        center = image_size // 2
+
+        if self.y >= 10:
+            if inside_hexagon(self.x, self.y, image_size) and not inside_square(self.x, self.y, image_size,
+                                                                                square_side):
+                if center - 10 >= self.x or self.x >= center + 10:  # normal dots
+                    self.set_change_color(black_color)
+                else:  # vertical dots
+                    self.set_vertical_dot(True)
+                    if size_arr_index < 7: size_arr_index += 1
+
+                    for _ in size_arr:
+                        if self.vertical_dot:
+                            if size_arr[size_arr_index]: # True
+                                print("Red")
+                                self.set_change_color((205, 239, 238, 255))
+                            else: # False
+                                print("Black")
+                                self.set_change_color(black_color)
+                    print('----------------')
+
+                cv2.circle(self.processed_image, (self.x, self.y), dot_radius, self.color, -1)
 
 
 class SQEDotPatternCode:
     def __init__(self, data, hexagon_radius=300, dot_spacing=10):
         self.data = data
+        self.size = len(data)
+        j = 1
+        for i in range(8):
+            if (self.size & j) > 0:
+                size_arr.append(True)
+            else:
+                size_arr.append(False)
+
+            j = j + j
         self.hexagon_radius = hexagon_radius
         self.dot_spacing = dot_spacing
         self.dot_diameter = 0.6 * dot_spacing  # Dot diameter is 90% of the dot-to-dot dimension
@@ -183,51 +217,47 @@ class SQEDotPatternCode:
             for y in range(0, cv_size[1], space):
                 for x in range(0, cv_size[0], space):
                     if includes_vertical_dots(x, center_x):  # remove vertical dots
-                        if self.inside_hexagon(x, y) and not inside_square(x, y, self.image_size, self.square_side):
+                        if inside_hexagon(x, y, self.image_size) and not inside_square(x, y, self.image_size,
+                                                                                       self.square_side):
                             if count <= self.dot_number:
                                 count += 1
                                 if count > self.dot_number:
                                     dot_spacing += 1
 
         if dot_spacing % 2 != 0:
-            return dot_spacing
+            return dot_spacing - 2
         return dot_spacing - 1
 
     def create_dot(self):
         cv_size = (1000, 1000)
-        center_x = self.image_size // 2
         dot_spacing = self.find_space(cv_size)
         print(f"dot_spacing is: {dot_spacing}")
+
+        """ add upper dots """
+        dot_first = DotPlacer(300, 10, self.processed_image, self.hexagon_radius)
+        self._dots.append(dot_first)
 
         # Loop through rows and columns to create a grid of circles
         for y in range(0, cv_size[1], dot_spacing):
             for x in range(0, cv_size[0], dot_spacing):
-                dot = DotPlacer(x, y, self.processed_image, self.image_size, self.hexagon_radius)
-                if includes_vertical_doss_color(x, center_x, dot):  # change vertical dots color
-                    if self.inside_hexagon(x, y) and not inside_square(x, y, self.image_size, self.square_side):
-                        if self.count <= self.dot_number:
-                            self._dots.append(dot)
-
-    def inside_hexagon(self, x, y):
-        """Check if a point (x, y) is inside the hexagon."""
-        center_x = self.image_size // 2
-        center_y = self.image_size // 2
-        dy = abs(x - center_x) / self.image_size
-        dx = abs(y - center_y) / self.image_size
-        a = 0.25 * math.sqrt(3.0)
-
-        return (dy <= a) and (a * dx + 0.25 * dy <= 0.5 * a)
+                dot = DotPlacer(x, y, self.processed_image, self.hexagon_radius)
+                if self.count <= self.dot_number:
+                    self._dots.append(dot)
 
     def show_dots(self):
-        print("show_dots", len(self._dots))
+        global size_arr_index
+
         for i, dot in enumerate(self._dots):
-            dot.show()
+            dot.show(self.square_side, self.image_size)
             self.count += 1
 
             # mirrored_x, mirrored_y = mirror_coordinates(x, y, center_x, center_y)
             # mirror_dot = DotPlacer(mirrored_x, mirrored_y, self.processed_image, self.image_size,
             #                        self.hexagon_radius)
             # mirror_dot.show()
+        """ add lower dots """
+        dot_end = DotPlacer(300, self.image_size - 10, self.processed_image, self.hexagon_radius)
+        dot_end.show(self.square_side, self.image_size)
 
     def process_and_visualize(self):
         """Generate the hexagon with dots and visualize the result."""
@@ -239,12 +269,11 @@ class SQEDotPatternCode:
 
         # Display the final image
         plt.imshow(self.processed_image, cmap="gray")
-        plt.axis()
+        plt.axis('off')
         plt.show()
 
 
 # Main entry point for generating the pattern
 if __name__ == "__main__":
-    processor = SQEDotPatternCode(
-        data="nceptosdiamcuraefeklklklklkli")
+    processor = SQEDotPatternCode(data="hello how are you? sdsdsdsd sdsdsds")
     processor.process_and_visualize()
