@@ -10,7 +10,7 @@ import json
 red_color = (0, 0, 252)
 black_color = (0, 0, 0)
 blue_color = (255, 0, 0)
-size_arr = []
+size_arr: list = []
 size_arr_index = -1
 """Variables End"""
 
@@ -22,7 +22,7 @@ def area_of_triangle(x1, y1, x2, y2, x3, y3):
 def mirror_coordinates(x, y, center_x, center_y):
     """Mirror coordinates across both x and y axes relative to the center point."""
     mirrored_x = 2 * center_x - x
-    mirrored_y = 2 * center_y - y
+    mirrored_y = 2 * center_y - y + 50
     return mirrored_x, mirrored_y
 
 
@@ -94,7 +94,7 @@ class DotPlacer:
         self.x = x
         self.y = y
         self.visible = True
-        self.dot_diameter = 4.5
+        self.dot_diameter = int(4.5)
         self.color = black_color
         self.center = image_size // 2
         self.hexagon_radius = hexagon_radius
@@ -102,6 +102,7 @@ class DotPlacer:
         self.inside_hexagon = inside_hexagon(self.x, self.y, image_size)
         self.inside_QRCode = inside_square(self.x, self.y, image_size, square_side)
         self.vertical_dot = self.center - 10 <= self.x <= self.center + 10
+        self.main_dot = False
 
     def set_vertical_dot(self, value: bool):
         self.vertical_dot = value
@@ -109,18 +110,25 @@ class DotPlacer:
     def set_change_color(self, value: tuple):
         self.color = value
 
+    def set_main_dot(self, value: bool):
+        self.main_dot = value
+
     def show(self):
         global size_arr_index
-        dot_radius = int(self.dot_diameter)
 
-        if self.inside_hexagon and not self.inside_QRCode:
-            if self.vertical_dot:
-                if size_arr_index < 7: size_arr_index += 1
-                if not size_arr[size_arr_index] and size_arr_index <= 7 and self.y < self.center:
-                    self.visible = False
+        if self.vertical_dot and not self.main_dot:
+            # Upper vertical Dots
+            if self.y <= self.center:
+                size_arr_index += 1
+                if not size_arr[size_arr_index]: self.visible = False
+            # Lower vertical Dots
+            if self.y >= self.center:  # not show lower vertical dots
+                if not size_arr[size_arr_index]: self.visible = False
+                size_arr_index -= 1
+                print(size_arr[size_arr_index], size_arr_index)
 
-            if self.visible:
-                cv2.circle(self.processed_image, (self.x, self.y), dot_radius, self.color, -1)
+        if self.visible:
+            cv2.circle(self.processed_image, (self.x, self.y), self.dot_diameter, self.color, -1)
 
 
 class SQEDotPatternCode:
@@ -131,6 +139,7 @@ class SQEDotPatternCode:
         self.processed_image = None
         self.dot_spacing = dot_spacing
         self._dots: list[DotPlacer] = []
+        self.vertical_dots: list[DotPlacer] = []
         self.image_size = 2 * hexagon_radius
         self.center = self.image_size // 2
         self.hexagon_radius = hexagon_radius
@@ -222,20 +231,25 @@ class SQEDotPatternCode:
 
         """ add upper dots """
         dot_first = DotPlacer(300, 10, self.processed_image, self.hexagon_radius, self.image_size, self.square_side)
-        dot_first.set_vertical_dot(True)
-        self._dots.append(dot_first)
+        dot_first.set_main_dot(True)
+        # self._dots.append(dot_first)
 
         # Loop through rows and columns to create a grid of circles
         for y in range(0, cv_size[1], dot_spacing):
             for x in range(0, cv_size[0], dot_spacing):
                 dot = DotPlacer(x, y, self.processed_image, self.hexagon_radius, self.image_size, self.square_side)
-                if self.count <= self.dot_number:
-                    self._dots.append(dot)
+                if dot.inside_hexagon and not dot.inside_QRCode:
+                    if self.count <= self.dot_number:
+                        self._dots.append(dot)
 
     def show_dots(self):
         global size_arr_index
 
         for i, dot in enumerate(self._dots):
+            if i == 0 or i == len(self._dots) - 1: dot.set_main_dot(True)
+            if dot.vertical_dot and dot.y <= self.center:  # append upper vertical dots in list
+                self.vertical_dots.append(dot)
+
             dot.show()
             self.count += 1
 
@@ -244,8 +258,9 @@ class SQEDotPatternCode:
             # mirror_dot.show()
 
         """ add lower dots """
-        dot_end = DotPlacer(300, 650, self.processed_image, self.hexagon_radius, self.image_size, self.square_side)
-        dot_end.show()
+        # dot_end = DotPlacer(300, 650, self.processed_image, self.hexagon_radius, self.image_size, self.square_side)
+        # dot_end.set_main_dot(True)
+        # dot_end.show()
 
     def process_and_visualize(self):
         """Generate the hexagon with dots and visualize the result."""
@@ -255,7 +270,9 @@ class SQEDotPatternCode:
         self.create_dot()
         self.show_dots()
 
-        print(size_arr)
+        print(f"size is: {self.size}")
+        print(f"count is: {self.count}")
+        print(f"size_arr is: {size_arr}")
 
         # Display the final image
         plt.imshow(self.processed_image, cmap="gray")
