@@ -64,7 +64,7 @@ def calculate_odd_row_positions(start, end, spacing):
 def inside_square(x, y, image_size, square_side):
     """Check if a point (x, y) is inside the central square."""
     start_x = (image_size - square_side) // 2
-    start_y = (image_size - square_side + 50) // 2
+    start_y = (image_size - square_side) // 2
     end_x = start_x + square_side
     end_y = start_y + square_side
 
@@ -78,7 +78,7 @@ def includes_vertical_dots(x, center_x):
 def inside_hexagon(x, y, image_size):
     """Check if a point (x, y) is inside the hexagon."""
     center_x = image_size // 2
-    center_y = (image_size + 50) // 2
+    center_y = image_size // 2
     dy = abs(x - center_x) / image_size
     dx = abs(y - center_y) / image_size
     a = 0.25 * math.sqrt(3.0)
@@ -194,7 +194,7 @@ class SQEDotPatternCode:
         qr_image_resized = cv2.resize(qr_image, (self.square_side, self.square_side), interpolation=cv2.INTER_AREA)
 
         # Overlay QR code at the center of the hexagon
-        qr_top_left_x = center_x - (qr_image_resized.shape[0] // 2) + 30
+        qr_top_left_x = center_x - (qr_image_resized.shape[0] // 2)
         qr_top_left_y = center_y - (qr_image_resized.shape[1] // 2)
 
         for i in range(qr_image_resized.shape[0]):
@@ -276,11 +276,11 @@ class SQEDotPatternCode:
 
         # Display the final image
         plt.imshow(self.processed_image, cmap="gray")
-        plt.axis()
+        plt.axis('off')
         plt.show()
 
 
 # Main entry point for generating the pattern
 if __name__ == "__main__":
-    processor = SQEDotPatternCode(data="hello how are you? sdsdsdsd sdsdsds")
+    processor = SQEDotPatternCode(data="hello how are you? https://web.whatsapp.com/")
     processor.process_and_visualize()
