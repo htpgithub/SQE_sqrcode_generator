@@ -277,7 +277,7 @@ class SQEDotPatternCode:
         # Display the final image
         plt.imshow(self.processed_image, cmap="gray")
         plt.axis('off')
-        plt.show()
+        plt.savefig('SQE_QR_code.png')
 
 
 # Main entry point for generating the pattern
